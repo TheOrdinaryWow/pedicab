@@ -13,7 +13,7 @@ use crate::{
         data::rule::{RuleProtocol, RuleStats, RuleStatus},
         model::rule::Rule,
     },
-    forward::{tcp::start_tcp_forward, udp::start_udp_forward},
+    forward::{tcp::start_tcp_forward, udp::start_udp_forward, utils},
 };
 
 pub type StatsCache = Cache<Uuid, RuleStats, ahash::RandomState>;
@@ -31,7 +31,7 @@ impl ForwardManager {
     pub async fn new(dal: DataAccessLayer, config: AgentConfig) -> Self {
         let manager = ForwardManager {
             dal,
-            config,
+            config: config.clone(),
             stats_cache: Cache::builder()
                 .max_capacity(10_000_000)
                 .build_with_hasher(ahash::RandomState::default()),
@@ -40,6 +40,14 @@ impl ForwardManager {
         };
 
         info!("forward manager initiated");
+
+        #[cfg(unix)]
+        {
+            match utils::unix_limits::increase_nofile_limit(config.expanded_nofile_limit) {
+                Ok(_) => info!("nofile limit increased"),
+                Err(e) => error!("error increasing nofile limit: {}", e),
+            }
+        }
 
         let _ = manager.load_rules().await;
 

@@ -62,8 +62,12 @@ pub struct AgentConfig {
     // /// Global maximum bandwidth limit in MB per second, disabled if empty
     // #[arg(long, env("BANDWIDTH_LIMIT"), value_parser = clap::value_parser!(u32).range(1..2^20+1))]
     // pub bandwidth_limit: Option<u32>,
+    // .
+    /// Expanded file descriptor limit, useful if you have many connections (100,000+)
+    #[arg(long, env("EXPANDED_NOFILE_LIMIT"), default_value_t = false)]
+    pub expanded_nofile_limit: bool,
 
-    // Metrics interval in milli seconds
+    /// Metrics interval in milliseconds
     #[arg(long, env("STATS_UPDATE_INTERVAL"), default_value_t = 300, value_parser = clap::value_parser!(u64).range(100..=5000))]
     pub stats_update_interval: u64,
 

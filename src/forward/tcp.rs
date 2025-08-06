@@ -276,6 +276,7 @@ async fn handle_connection(
                 }
 
                 let _ = server_writer.shutdown().await;
+                debug!(parent: &span, "client_to_server stream closed");
             };
 
             let server_to_client = async {
@@ -318,6 +319,7 @@ async fn handle_connection(
                 }
 
                 let _ = client_writer.shutdown().await;
+                debug!(parent: &span, "server_to_client stream closed");
             };
 
             let handle = tokio::time::timeout(

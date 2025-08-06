@@ -98,3 +98,6 @@ rust-embed = { version = "8", features = [
   "mime-guess",
   "deterministic-timestamps",
 ] }
+
+[target.'cfg(unix)'.dependencies]
+rlimit = { version = "0" }
