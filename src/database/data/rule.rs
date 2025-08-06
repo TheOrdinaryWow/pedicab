@@ -49,7 +49,9 @@ pub enum RuleStatus {
 
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct RuleStats {
+    #[serde(rename = "rt_connections")]
     pub connections: RuleStatsConnections,
+    #[serde(rename = "rt_speed")]
     pub speed: u64,
     pub bandwidth: u64,
     pub failed_times: u64,

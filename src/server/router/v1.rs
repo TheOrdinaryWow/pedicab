@@ -48,7 +48,7 @@ pub fn build_router(app_state: AppState) -> Router<AppState> {
                             "/stats/{rule_id}",
                             get(controller::fm::get_stat).delete(controller::fm::reset_stat),
                         )
-                        .route("/restart/{rule_id}", get(controller::fm::restart_rule)),
+                        .route("/restart/{rule_id}", post(controller::fm::restart_rule)),
                 )
                 .nest(
                     "/metrics",

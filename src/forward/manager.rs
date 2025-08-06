@@ -23,7 +23,7 @@ pub struct ForwardManager {
     dal: DataAccessLayer,
     config: AgentConfig,
     stats_cache: StatsCache,
-    rules: Arc<RwLock<Vec<(Rule, u64)>>>, // [1] is rule digest
+    rules: Arc<RwLock<Vec<(Uuid, u64)>>>, // [1] is rule digest
     tasks: Arc<RwLock<HashMap<Uuid, JoinHandle<()>>>>,
 }
 
@@ -64,9 +64,9 @@ impl ForwardManager {
                     .insert(
                         key,
                         RuleStats {
-                            connections: value.connections,
+                            bandwidth: value.bandwidth,
                             failed_times: value.failed_times,
-                            last_failed_message: value.last_failed_message,
+                            // last_failed_message: value.last_failed_message,
                             ..Default::default()
                         },
                     )
@@ -88,31 +88,33 @@ impl ForwardManager {
         let mut current_rules = self.rules.write().await;
 
         // stop disabled rules
-        for rule in current_rules.iter() {
-            if !db_rules.iter().any(|r| r.id == rule.0.id && r.enabled) {
-                let _ = self.stop_rule(rule.0.id.into()).await;
+        for (rule_id, _) in current_rules.iter() {
+            if !db_rules.iter().any(|r| &r.id.as_uuid() == rule_id && r.enabled) {
+                let _ = self.stop_rule(*rule_id).await;
             }
         }
 
         for rule in db_rules.iter().filter(|rule| rule.status != RuleStatus::Error) {
             // start enabled rules
-            if rule.enabled && !current_rules.iter().any(|r| r.0.id == rule.id) {
-                let _ = self.start_rule(rule.id.into()).await;
+            if rule.enabled && !current_rules.iter().any(|(rule_id, _)| *rule_id == rule.id.as_uuid()) {
+                let _ = self.start_rule(rule.id.as_uuid()).await;
             }
 
             // restart changed rules
-            if let Some(current_rule) = current_rules.iter_mut().find(|r| r.0.id == rule.id)
-                && current_rule.1 != rule.digest_config()
+            if let Some((rule_id, rule_digest)) = current_rules
+                .iter_mut()
+                .find(|(rule_id, _)| *rule_id == rule.id.as_uuid())
+                && *rule_digest != rule.digest_config()
             {
-                let _ = self.stop_rule(rule.id.into()).await;
-                let _ = self.start_rule(rule.id.into()).await;
+                let _ = self.stop_rule(*rule_id).await;
+                let _ = self.start_rule(*rule_id).await;
             }
         }
 
         let wanted_rules = db_rules
             .into_iter()
             .filter(|rule| rule.enabled && rule.status != RuleStatus::Error)
-            .map(|rule| (rule.clone(), rule.digest_config()))
+            .map(|rule| (rule.id.as_uuid(), rule.digest_config()))
             .collect::<Vec<(_, _)>>();
 
         *current_rules = wanted_rules.clone();
@@ -120,7 +122,7 @@ impl ForwardManager {
         let rules = wanted_rules
             .clone()
             .iter()
-            .map(|(rule, _)| rule.id.as_uuid().to_string())
+            .map(|(rule, _)| rule.to_string())
             .collect::<Vec<_>>()
             .join(", ");
 
@@ -145,7 +147,15 @@ impl ForwardManager {
 
     pub async fn get_rules(&self) -> Vec<Rule> {
         let lock = self.rules.read().await;
-        lock.clone().into_iter().map(|rule| rule.0).collect()
+        let mut rules = Vec::new();
+
+        for (rule_id, _) in lock.clone().into_iter() {
+            if let Ok(Some(rule)) = self.dal.rule.find_by_id(rule_id).await {
+                rules.push(rule);
+            }
+        }
+
+        rules
     }
 
     pub async fn start_rule(&self, id: Uuid) -> anyhow::Result<(), anyhow::Error> {
@@ -222,7 +232,7 @@ impl ForwardManager {
 
         // it has to be done anyway so it's fine
         let _ = self.dal.rule.update_status(id, RuleStatus::Stopped).await;
-        if let Some(i) = current_rules.iter().position(|(rule, _)| rule.id.as_uuid() == id) {
+        if let Some(i) = current_rules.iter().position(|(rule_id, _)| *rule_id == id) {
             current_rules.remove(i);
         }
 
@@ -251,9 +261,12 @@ impl ForwardManager {
     }
 
     pub async fn get_stats(&self) -> HashMap<Uuid, RuleStats> {
+        let current_rules = self.rules.read().await;
+
         self.stats_cache
             .iter()
             .map(|(id, stat)| (*id, stat.clone()))
+            .filter(|(id, _)| current_rules.iter().any(|(rule_id, _)| *rule_id == *id))
             .collect::<HashMap<Uuid, RuleStats>>()
     }
 
@@ -267,6 +280,8 @@ impl ForwardManager {
 
         let stats = self.get_stats().await;
 
+        trace!(parent: &span, "function entered");
+
         for (id, stat) in stats {
             if db_rules.iter().any(|r| r.id.as_uuid() == id)
                 && let Err(e) = self.dal.rule.update_stats(id, stat).await
@@ -277,6 +292,8 @@ impl ForwardManager {
                 );
             }
         }
+
+        trace!(parent: &span, "function ended");
     }
 
     pub async fn reset_stat(&self, id: Uuid) -> anyhow::Result<()> {
