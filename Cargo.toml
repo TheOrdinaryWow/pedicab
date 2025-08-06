@@ -1,0 +1,100 @@
+cargo-features = ["profile-rustflags"]
+
+[package]
+name = "pedicab"
+version = "0.1.0"
+edition = "2024"
+
+[profile.release]
+opt-level = 3                          # Optimize for size.
+lto = true                             # Enable Link Time Optimization
+codegen-units = 1                      # Reduce number of codegen units to increase optimizations.
+panic = "abort"                        # Abort on panic
+strip = true                           # Automatically strip symbols from the binary.
+rustflags = ["-Zlocation-detail=none"]
+debug = false
+
+[dependencies]
+# Async
+tokio = { version = "1", features = ["full"] }
+futures = { version = "0" }
+tower = { version = "0", features = ["log"] }
+tower-http = { version = "0", features = [
+  "trace",
+  "compression-full",
+  "request-id",
+  "cors",
+  "timeout",
+  "normalize-path",
+] }
+async-trait = { version = "0.1" }
+parking_lot = { version = "0.12", features = [
+  "nightly",
+  "deadlock_detection",
+  "hardware-lock-elision",
+] }
+
+# Utils
+rand = { version = "*", features = ["nightly", "serde"] }
+thiserror = { version = "2.0" }
+anyhow = { version = "1.0" }
+strum = { version = "0.27", features = ["derive"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+console = { version = "0" }
+nix = { version = "0.30", features = [
+  "feature",
+  "zerocopy",
+  "event",
+  "socket",
+] }
+ahash = { version = "0.8", features = ["serde"] }
+bincode = { version = "2.0", features = ["serde"] }
+time = { version = "0", features = [
+  "macros",
+  "quickcheck",
+  "serde-human-readable",
+] }
+
+# Serde / Derive
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+serde_derive = { version = "1.0" }
+serde_with = { version = "3.14", features = [
+  "time_0_3",
+  "json",
+  "hex",
+  "base64",
+  "indexmap",
+] }
+derive_more = { version = "*", features = ["full"] }
+
+# CLI
+clap = { version = "4.5", features = ["derive", "env", "wrap_help", "unicode"] }
+dotenvy = { version = "0", features = ["cli"] }
+
+# Observability
+tracing = { version = "0.1", features = ["default"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "std"] }
+
+# System
+mimalloc = { version = "*" }
+socket2 = { version = "0.6", features = ["all"] }
+sysinfo = { version = "0", features = ["serde", "multithread"] }
+
+# Database
+sled = { version = "0.34", features = ["event_log", "miri_optimizations"] }
+
+# Cache
+moka = { version = "0.12", features = ["future", "logging"] }
+
+# HTTP
+axum = { version = "0.8", features = ["macros"] }
+http = { version = "1" }
+url = { version = "2" }
+address = { version = "0" }
+rust-embed = { version = "8", features = [
+  "debug-embed",
+  "compression",
+  "mime-guess",
+  "deterministic-timestamps",
+] }

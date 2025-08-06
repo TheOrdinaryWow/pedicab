@@ -1,0 +1,31 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  default:
+    cmds:
+      - task: build
+
+  check:
+    desc: Check code & format
+    cmds:
+      - cargo check
+      - cargo fmt --all -- --check
+      - cargo clippy --all-targets --all-features
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean
+
+  run:
+    desc: Run the application
+    cmds:
+      - cargo run
+  build:
+    desc: Build for current target platform
+    generates:
+      - target/debug
+    cmds:
+      - cargo build --release
