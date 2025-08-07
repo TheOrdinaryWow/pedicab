@@ -1,65 +1,10 @@
 use axum::{extract::State, response::IntoResponse};
-use serde::Serialize;
-use sysinfo::{DiskKind, DiskUsage, Disks, Networks, System};
+use sysinfo::{Disks, Networks, System};
 
-use crate::server::{AppState, data::response::BaseResponse};
-
-#[derive(Debug, Serialize)]
-struct CpuInfo {
-    count: usize,
-    global_usage: f32,
-    usage_per_core: Vec<f32>,
-}
-
-#[derive(Debug, Serialize)]
-struct MemoryInfo {
-    used: u64,
-    available: u64,
-    total: u64,
-}
-
-#[derive(Debug, Serialize)]
-struct SwapInfo {
-    used: u64,
-    total: u64,
-}
-
-#[derive(Debug, Serialize)]
-struct DiskInfo {
-    name: String,
-    kind: DiskKind,
-    available: u64,
-    total: u64,
-    usage: DiskUsage,
-}
-
-#[derive(Debug, Serialize)]
-struct SystemInfo {
-    cpu: CpuInfo,
-    memory: MemoryInfo,
-    swap: SwapInfo,
-    disk: Vec<DiskInfo>,
-}
-
-#[derive(Debug, Serialize)]
-struct NetworkInfo {
-    traffic_sent: u64,
-    traffic_received: u64,
-    // io_upload: u64,
-    // io_download: u64,
-    // connections_tcp: u64,
-    // connections_udp: u64,
-}
-
-#[derive(Debug, Serialize)]
-struct HostInfo {
-    os_name: String,
-    host_name: String,
-    uptime: u64,
-    boot_time: u64,
-    cpu_arch: String,
-    kernel_version: String,
-}
+use crate::server::{
+    AppState,
+    data::{metrics::*, response::BaseResponse},
+};
 
 pub async fn get_system_info() -> impl IntoResponse {
     let mut system = System::new_all();
@@ -74,6 +19,7 @@ pub async fn get_system_info() -> impl IntoResponse {
             count: system.cpus().len(),
             global_usage: system.global_cpu_usage(),
             usage_per_core: system.cpus().iter().map(|cpu| cpu.cpu_usage()).collect(),
+            load: System::load_average(),
         },
         memory: MemoryInfo {
             used: system.used_memory(),
@@ -127,6 +73,7 @@ pub async fn get_host_info() -> impl IntoResponse {
 
     let host_info = HostInfo {
         os_name: System::name().unwrap_or(String::from("unknown")),
+        os_version: System::long_os_version().unwrap_or(String::from("unknown")),
         host_name: System::host_name().unwrap_or(String::from("unknown")),
         uptime: System::uptime(),
         boot_time: System::boot_time(),
