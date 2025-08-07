@@ -4,8 +4,13 @@ use axum::{
     Router, middleware,
     routing::{get, post},
 };
+use http::Method;
 use tower::ServiceBuilder;
-use tower_http::{request_id::PropagateRequestIdLayer, timeout::TimeoutLayer};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    request_id::PropagateRequestIdLayer,
+    timeout::TimeoutLayer,
+};
 
 use crate::server::{
     AppState, controller,
@@ -16,6 +21,18 @@ use crate::server::{
 };
 
 pub fn build_router(app_state: AppState) -> Router<AppState> {
+    let cors_layer = CorsLayer::new()
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PATCH,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([http::header::AUTHORIZATION])
+        .allow_origin(Any)
+        .max_age(Duration::from_secs(86400));
+
     Router::<AppState>::new()
         .nest(
             "/api/v1",
@@ -56,11 +73,19 @@ pub fn build_router(app_state: AppState) -> Router<AppState> {
                         .route("/system", get(controller::metrics::get_system_info))
                         .route("/network", get(controller::metrics::get_network_info))
                         .route("/host", get(controller::metrics::get_host_info)),
+                )
+                .nest(
+                    "/health",
+                    Router::new().route(
+                        "/ok",
+                        get(|| async { axum::Json(serde_json::json!({"message": "ok"})) }),
+                    ),
                 ),
         )
         .layer(
             ServiceBuilder::new()
                 .layer(TimeoutLayer::new(Duration::from_secs(10)))
+                .layer(cors_layer)
                 .layer(RequestIdLayer::new())
                 .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER_NAME))
                 .layer(middleware::from_fn_with_state(
