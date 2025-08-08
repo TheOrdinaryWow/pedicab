@@ -2,6 +2,8 @@
 
 version: "3"
 
+dotenv: [".env", "{{.ENV}}/.env", "{{.HOME}}/.env"]
+
 tasks:
   default:
     cmds:
@@ -29,3 +31,13 @@ tasks:
       - target/debug
     cmds:
       - cargo build --release
+
+  cp_frontend_res:
+    desc: Copy frontend resources to for embed
+    cmds:
+      - cp -r $FRONTEND_DIST_DIR frontend_dist
+
+  rm_frontend_res:
+    desc: Remove frontend resources
+    cmds:
+      - rm -rf frontend_dist

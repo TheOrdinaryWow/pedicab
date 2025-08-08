@@ -29,3 +29,6 @@ target/
 # Project-related files
 pedicab.db
 pedicab_data
+
+# Frontend dist files for embed
+frontend_dist

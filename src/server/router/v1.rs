@@ -29,7 +29,7 @@ pub fn build_router(app_state: AppState) -> Router<AppState> {
             Method::DELETE,
             Method::OPTIONS,
         ])
-        .allow_headers([http::header::AUTHORIZATION])
+        .allow_headers([http::header::AUTHORIZATION, http::header::CONTENT_TYPE])
         .allow_origin(Any)
         .max_age(Duration::from_secs(86400));
 

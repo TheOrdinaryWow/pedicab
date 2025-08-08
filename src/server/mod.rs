@@ -1,12 +1,17 @@
 // pub(in crate::server) mod controller;
 mod controller;
 mod data;
+mod embed;
 mod layer;
 mod router;
 
 use tracing::info;
 
-use crate::{cli::Cli, database::dal::DataAccessLayer, forward::manager::ForwardManager};
+use crate::{
+    cli::{Cli, ServerConfig},
+    database::dal::DataAccessLayer,
+    forward::manager::ForwardManager,
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -15,8 +20,8 @@ pub struct AppState {
     pub fm: ForwardManager,
 }
 
-pub async fn start_server(app_state: AppState) -> anyhow::Result<()> {
-    let router = router::build_router(app_state.clone());
+pub async fn start_api_server(app_state: AppState) -> anyhow::Result<()> {
+    let router = router::build_api_router(app_state.clone());
 
     let listen_addr = format!(
         "{}:{}",
@@ -26,6 +31,19 @@ pub async fn start_server(app_state: AppState) -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(listen_addr.clone()).await.unwrap();
 
     info!("http server is listening on {}", listen_addr);
+
+    axum::serve(listener, router).await.unwrap();
+    Ok(())
+}
+
+pub async fn start_web_server(config: ServerConfig) -> anyhow::Result<()> {
+    let router = router::build_web_router();
+
+    let listen_addr = format!("{}:{}", config.listen_host, config.listen_port);
+
+    let listener = tokio::net::TcpListener::bind(listen_addr.clone()).await.unwrap();
+
+    info!("http server is listening on {} with web mode enabled", listen_addr);
 
     axum::serve(listener, router).await.unwrap();
     Ok(())

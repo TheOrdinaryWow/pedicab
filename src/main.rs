@@ -53,6 +53,10 @@ async fn main() -> anyhow::Result<()> {
 
     info!("pedicab is initializing");
 
+    if cli.server.web_mode {
+        server::start_web_server(cli.server.clone()).await?;
+    }
+
     let db = match sled::Config::new()
         .path(cli.global.database_path.clone())
         .cache_capacity(1024 * 1024 * 8)
@@ -78,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
       Err(_) = fm.start_polling() => {
         error!("manager polling error");
       },
-      Err(err) = server::start_server(AppState { cli, dal, fm: fm.clone() }) => {
+      Err(err) = server::start_api_server(AppState { cli, dal, fm: fm.clone() }) => {
         error!("http server failed: {:?}", err);
         panic!();
       }

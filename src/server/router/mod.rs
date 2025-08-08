@@ -1,3 +1,4 @@
+mod embed;
 mod v1;
 
 use std::time::Duration;
@@ -10,7 +11,7 @@ use tracing::Span;
 
 use crate::server::{AppState, layer::request_id::REQUEST_ID_HEADER_NAME};
 
-pub fn build_router(app_state: AppState) -> Router {
+pub fn build_api_router(app_state: AppState) -> Router {
     let trace_layer = TraceLayer::new_for_http()
         .make_span_with(|request: &Request<_>| {
             tracing::info_span!(
@@ -104,4 +105,12 @@ pub fn build_router(app_state: AppState) -> Router {
         .layer(NormalizePathLayer::trim_trailing_slash())
         .layer(trace_layer)
         .with_state(app_state.clone())
+}
+
+pub fn build_web_router() -> Router {
+    Router::new()
+        .merge(embed::build_router())
+        .nest("/health", Router::new().route("/", get(|| async { "ok" })))
+        .layer(CompressionLayer::new())
+        .layer(NormalizePathLayer::trim_trailing_slash())
 }
