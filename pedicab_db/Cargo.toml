@@ -1,0 +1,17 @@
+[package]
+name = "pedicab_db"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Utils
+ahash = { workspace = true }
+bincode = { version = "2.0", features = ["serde"] }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+
+# Serde / Derive
+serde = { workspace = true }
+
+# Database
+sled = { version = "0.34", features = ["event_log", "miri_optimizations"] }

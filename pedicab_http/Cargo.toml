@@ -1,0 +1,48 @@
+[package]
+name = "pedicab_http"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Workspace
+pedicab_cli = { workspace = true }
+pedicab_core = { workspace = true }
+pedicab_db = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+tower = { workspace = true }
+
+# Utils
+anyhow = { workspace = true }
+uuid = { workspace = true }
+console = { workspace = true }
+sysinfo = { version = "0", features = ["serde", "multithread"] }
+
+# Serde / Derive
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Observability
+tracing = { workspace = true }
+
+# HTTP
+tower-http = { version = "0", features = [
+  "trace",
+  "compression-full",
+  "request-id",
+  "cors",
+  "timeout",
+  "normalize-path",
+] }
+axum = { version = "0.8", features = ["macros"] }
+http = { version = "1" }
+url = { version = "2" }
+address = { version = "0" }
+rust-embed = { version = "8", features = [
+  "debug-embed",
+  "compression",
+  "mime-guess",
+  "deterministic-timestamps",
+] }
+httpdate = { version = "1" }

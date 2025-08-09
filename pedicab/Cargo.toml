@@ -1,0 +1,36 @@
+cargo-features = ["profile-rustflags"]
+
+[package]
+name = "pedicab"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+all = ["use-mimalloc"]
+use-mimalloc = ["dep:mimalloc"]
+
+[dependencies]
+# Workspace
+pedicab_cli = { workspace = true }
+pedicab_core = { workspace = true }
+pedicab_db = { workspace = true }
+pedicab_http = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+
+# Utils
+anyhow = { workspace = true }
+
+# Observability
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# CLI
+clap = { workspace = true }
+dotenvy = { workspace = true }
+
+# System
+mimalloc = { version = "*", optional = true }
+sled = "0.34.7"

@@ -1,10 +1,5 @@
 cargo-features = ["profile-rustflags"]
 
-[package]
-name = "pedicab"
-version = "0.1.0"
-edition = "2024"
-
 [profile.release]
 opt-level = 3                          # Optimize for size.
 lto = true                             # Enable Link Time Optimization
@@ -14,19 +9,32 @@ strip = true                           # Automatically strip symbols from the bi
 rustflags = ["-Zlocation-detail=none"]
 debug = false
 
-[dependencies]
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+resolver = "3"
+members = [
+  "pedicab",
+  "pedicab_cli",
+  "pedicab_core",
+  "pedicab_db",
+  "pedicab_http",
+]
+default-members = ["pedicab"]
+
+[workspace.dependencies]
+# Workspace
+pedicab_cli = { path = "pedicab_cli" }
+pedicab_core = { path = "pedicab_core" }
+pedicab_db = { path = "pedicab_db" }
+pedicab_http = { path = "pedicab_http" }
+
 # Async
 tokio = { version = "1", features = ["full"] }
-futures = { version = "0" }
 tower = { version = "0", features = ["log"] }
-tower-http = { version = "0", features = [
-  "trace",
-  "compression-full",
-  "request-id",
-  "cors",
-  "timeout",
-  "normalize-path",
-] }
+futures = { version = "0" }
 async-trait = { version = "0.1" }
 parking_lot = { version = "0.12", features = [
   "nightly",
@@ -35,6 +43,7 @@ parking_lot = { version = "0.12", features = [
 ] }
 
 # Utils
+ahash = { version = "0.8", features = ["serde"] }
 rand = { version = "*", features = ["nightly", "serde"] }
 thiserror = { version = "2.0" }
 anyhow = { version = "1.0" }
@@ -47,8 +56,6 @@ nix = { version = "0.30", features = [
   "event",
   "socket",
 ] }
-ahash = { version = "0.8", features = ["serde"] }
-bincode = { version = "2.0", features = ["serde"] }
 time = { version = "0", features = [
   "macros",
   "quickcheck",
@@ -68,37 +75,10 @@ serde_with = { version = "3.14", features = [
 ] }
 derive_more = { version = "*", features = ["full"] }
 
-# CLI
-clap = { version = "4.5", features = ["derive", "env", "wrap_help", "unicode"] }
-dotenvy = { version = "0", features = ["cli"] }
-
 # Observability
 tracing = { version = "0.1", features = ["default"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "std"] }
 
-# System
-mimalloc = { version = "*" }
-socket2 = { version = "0.6", features = ["all"] }
-sysinfo = { version = "0", features = ["serde", "multithread"] }
-
-# Database
-sled = { version = "0.34", features = ["event_log", "miri_optimizations"] }
-
-# Cache
-moka = { version = "0.12", features = ["future", "logging"] }
-
-# HTTP
-axum = { version = "0.8", features = ["macros"] }
-http = { version = "1" }
-url = { version = "2" }
-address = { version = "0" }
-rust-embed = { version = "8", features = [
-  "debug-embed",
-  "compression",
-  "mime-guess",
-  "deterministic-timestamps",
-] }
-httpdate = { version = "1" }
-
-[target.'cfg(unix)'.dependencies]
-rlimit = { version = "0" }
+# CLI
+clap = { version = "4.5", features = ["derive", "env", "wrap_help", "unicode"] }
+dotenvy = { version = "0", features = ["cli"] }
